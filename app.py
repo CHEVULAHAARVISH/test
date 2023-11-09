@@ -65,19 +65,27 @@ def get_movie_by_id(movie_id):
         return jsonify(movie.to_dict())
     return jsonify({'error': 'Movie not found'}), 404
 
+
 @app.route('/movies', methods=['POST'])
 def create_movie():
     data = request.get_json()
+
     # Retrieve genre, actor, and technician data from the JSON
     genres_data = data.get('genres', [])
     actors_data = data.get('actors', [])
     technicians_data = data.get('technicians', [])
+
     # Create Movie instance
     new_movie = Movie(
         name=data['name'],
         year_of_release=data['year_of_release'],
         user_ratings=data['user_ratings']
     )
+    
+    existing_movie = Movie.query.filter_by(name=new_movie.name, year_of_release=new_movie.year_of_release).first()
+    if existing_movie:
+        return jsonify({'error': 'Movie already exists'}), 400
+
     # Create Genre instances and assign them to the movie
     genres = [Genre(name=genre) for genre in genres_data]
     new_movie.genres.extend(genres)
@@ -95,9 +103,10 @@ def create_movie():
     
     return jsonify({'message': 'Movie created successfully'}), 201
 
-@app.route('/movies/<int:movie_id>', methods=['PATCH'])
-def update_movie(movie_id):
-    movie = Movie.query.get(movie_id)
+
+@app.route('/movies/<string:movie_name>', methods=['PATCH'])
+def update_movie(movie_name):
+    movie = Movie.query.filter_by(name=movie_name).first()
     
     if movie:
         data = request.get_json()
@@ -123,6 +132,7 @@ def update_movie(movie_id):
     
     return jsonify({'error': 'Movie not found'}), 404
 
+
 @app.route('/movie', methods=['GET'])
 def get_all_moviesbycondi():
     page = request.args.get('page', 1, type=int)
@@ -147,7 +157,7 @@ def get_all_moviesbycondi():
         'movies': movie_list,
         'total_pages': movies.pages,
         'current_page': movies.page,
-        'total_movies': movies.total
+        'total_movies_matching are': movies.total
     })
 
 
