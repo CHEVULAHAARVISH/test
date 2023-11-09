@@ -1,0 +1,55 @@
+@app.route('/movies', methods=['POST', 'PATCH'])
+def create_or_update_movie():
+    data = request.get_json()
+    movie_id = data.get('id')
+    
+    if movie_id:
+        movie = Movie.query.get(movie_id)
+        
+        if movie:
+            movie.name = data['name']
+            movie.year_of_release = data['year_of_release']
+            movie.user_ratings = data['user_ratings']
+            
+            genres_data = data.get('genres', [])
+            genres = [Genre(name=genre) for genre in genres_data]
+            movie.genres = genres
+            
+            actors_data = data.get('actors', [])
+            actors = [Actor(name=actor) for actor in actors_data]
+            movie.actors = actors
+            
+            technicians_data = data.get('technicians', [])
+            technicians = [Technician(name=technician) for technician in technicians_data]
+            movie.technicians = technicians
+            
+            db.session.commit()
+            
+            return jsonify({'message': 'Movie updated successfully'})
+        
+        return jsonify({'error': 'Movie not found'}), 404
+    
+    else:
+        # Create a new movie
+        new_movie = Movie(
+            name=data['name'],
+            year_of_release=data['year_of_release'],
+            user_ratings=data['user_ratings']
+        )
+        
+        genres_data = data.get('genres', [])
+        genres = [Genre(name=genre) for genre in genres_data]
+        new_movie.genres = genres
+        
+        actors_data = data.get('actors', [])
+        actors = [Actor(name=actor) for actor in actors_data]
+        new_movie.actors = actors
+        
+        technicians_data = data.get('technicians', [])
+        technicians = [Technician(name=technician) for technician in technicians_data]
+        new_movie.technicians = technicians
+        
+        db.session.add(new_movie)
+        db.session.commit()
+        
+        return jsonify({'message': 'Movie created successfully'}), 201
